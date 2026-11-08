@@ -1,4 +1,5 @@
 *.o
 src/rastertolxz33
+src/rastertolxz33-test
 tools/mkraster
 testpage.z33

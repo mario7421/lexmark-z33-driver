@@ -1150,7 +1150,7 @@ static int do_preamble(lxx74_device_t *lxx74, FILE *f)
 
     preamble = fopen(fn, "rb");
     if (preamble == NULL){
-	error("failed to open preamble file");
+	error("failed to open preamble file '%s': %s", fn, strerror(errno));
 	return -1;
     }
 
@@ -1202,7 +1202,6 @@ static int do_pageend(lxx74_device_t *lxx74, FILE *f)
     return 0;
 }
 
-static char *Arg0;
 static cups_page_header2_t *cups_header;
 static char *filename;
 static long copies;
@@ -1314,6 +1313,7 @@ char *cups_cspace_name(cups_cspace_t cspace)
     }    
 }
 
+static char *Arg0;
 static int newpage=0;
 
 /* v a l i d a t e _ p a g e _ h e a d e r */

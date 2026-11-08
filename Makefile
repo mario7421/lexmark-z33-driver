@@ -22,14 +22,22 @@ PREAMBLE_PATH     = $(CUPS_DATADIR)/data/z33-preamble.bin
 
 FILTER   = src/rastertolxz33
 TESTTOOL = tools/mkraster
+# Test-build variant: identical to the filter, but the preamble path
+# points into the source tree so the test suite runs without installing.
+TESTFILTER = src/rastertolxz33-test
 
-.PHONY: all install uninstall test clean
+.PHONY: all install uninstall test check clean
 
-all: $(FILTER)
+all: $(FILTER) $(TESTTOOL) $(TESTFILTER)
 
 $(FILTER): src/rastertolxz33.c
 	$(CC) $(CFLAGS) $(HARDENING) -DDRIVER_VERSION=\"$(DRIVER_VERSION)\" \
 	      -DZ33_PREAMBLE_FILENAME=\"$(PREAMBLE_PATH)\" \
+	      -o $@ $< $(LDLIBS) $(LDFLAGS)
+
+$(TESTFILTER): src/rastertolxz33.c src/z33-preamble.bin
+	$(CC) $(CFLAGS) $(HARDENING) -DDRIVER_VERSION=\"$(DRIVER_VERSION)\" \
+	      -DZ33_PREAMBLE_FILENAME=\"$(CURDIR)/src/z33-preamble.bin\" \
 	      -o $@ $< $(LDLIBS) $(LDFLAGS)
 
 $(TESTTOOL): tools/mkraster.c
@@ -54,13 +62,18 @@ uninstall:
 
 # Offline smoke test: render a synthetic page to CUPS raster, run it
 # through the filter, and write the raw printer stream to testpage.z33.
-test: $(FILTER) $(TESTTOOL)
-	$(TESTTOOL) | $(FILTER) smoke 1 user testpattern 1 "" > testpage.z33
+test: $(TESTFILTER) $(TESTTOOL)
+	$(TESTTOOL) | $(TESTFILTER) smoke 1 user testpattern 1 "" > testpage.z33
 	@bytes=$$(wc -c < testpage.z33); \
 	echo "OK: wrote $$bytes bytes of Z33 printer data to testpage.z33"; \
 	head -c 4 testpage.z33 | od -An -tx1 | grep -q '1b 2f 81 00' \
 	    && echo "OK: output starts with the Z33 preamble (1b 2f 81 00)" \
 	    || { echo "FAIL: preamble missing"; exit 1; }
 
+# Full test suite: golden hashes, raster-version equivalence,
+# hostile-input corpus under sanitizers. See tests/run_tests.sh.
+check: $(TESTFILTER) $(TESTTOOL)
+	./tests/run_tests.sh
+
 clean:
-	rm -f $(FILTER) $(TESTTOOL) testpage.z33
+	rm -f $(FILTER) $(TESTFILTER) $(TESTTOOL) testpage.z33
