@@ -16,7 +16,10 @@
 ## This port
 
 The files in `upstream/lxx74-cups-0.8.2-z33/` are byte-for-byte the
-2005 release. `src/rastertolxz33.c` is derived from it with the
+2005 release; the pristine tree is also git-tagged
+`lxx74-cups-0.8.2-z33-original` (the first commit of the history), so
+`git diff lxx74-cups-0.8.2-z33-original..main` shows every change
+made by this port. `src/rastertolxz33.c` is derived from it with the
 following functional changes (same license, GPL v2):
 
 - CUPS raster page-header reading rewritten to support all raster

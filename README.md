@@ -163,6 +163,7 @@ src/lxz33.convs/.types optional CUPS MIME definitions
 tools/mkraster.c       generates a synthetic CUPS-raster page (for tests)
 tests/                 test suite: run_tests.sh, raster version converter
 upstream/              the 2005 sources this port is based on, unmodified
+                       (also available as git tag lxx74-cups-0.8.2-z33-original)
 ```
 
 ## Background & credits
