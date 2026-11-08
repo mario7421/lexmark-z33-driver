@@ -68,7 +68,7 @@ if [ -z "$URI" ]; then
 else
     # Reuse an existing queue on this URI if present, else create 'Z33'.
     # (Locale-independent: strip the trailing ": URI", then take the last word.)
-    NAME="$(lpstat -v 2>/dev/null | grep -F "$URI" | head -1 | awk -v uri="$URI" '{ sub(":[[:space:]]*"uri"[[:space:]]*$", ""); print $NF }')"
+    NAME="$(lpstat -v 2>/dev/null | grep -F "$URI" | head -1 | awk 'BEGIN{uri=ENVIRON["LPURI"]} { sub(":[[:space:]]*"uri"[[:space:]]*$", ""); print $NF }' LPURI="$URI")"
     [ -z "$NAME" ] && NAME=Z33
     say "Configuring queue '$NAME' on $URI..."
     LPADMIN=lpadmin
