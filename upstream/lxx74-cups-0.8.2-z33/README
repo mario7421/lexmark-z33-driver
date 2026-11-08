@@ -1,0 +1,32 @@
+This package is modified to work with Lexmark Z33 printer.
+Copyright (c) 2005 Vitaly V. Bursov <vitalyvb.ukr.net>
+
+Original README follows
+
+-----------------------------
+The Lexmark X74 All In One is a printer and a scanner in a single box.
+
+This driver was written to allow me to use my X74 as a printer connected
+to my GNU / Linux computer. I had no ambitions of addressing the scanner.
+I have heard rumors that there is a software system called "Sane" that
+is used to connect scanners to GNU / Linux systems, but I am hard at hearing
+and I do not know any more about that.
+
+This driver is 
+
+  Copyright (c) 2003, 2004 Enrique Perez-Terron, 
+
+and is published under the GNU Public License version 2.  See the adjoined file
+LICENSE, or write to the
+
+  Free Software Foundation, Inc., 59 Temple Place
+  Suite 330, Boston, MA 02111-1307, USA.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+See the file INSTALL for installation instructions. Please report bugs and problems
+to me at 
+
+Enrique Perez-Terron <enrio@online.no>

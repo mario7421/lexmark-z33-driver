@@ -1,0 +1,73 @@
+This package is modified to work with Lexmark Z33 printer.
+Copyright (c) 2005 Vitaly V. Bursov <vitalyvb.ukr.net>
+
+Original INSTALL follows
+
+-----------------------------
+Instructions: 
+  1. Download lxx74-cups-0.8.2.tar.gz, 
+  2. Untar it anywhere – tar zxf lxx74-cups-0.8.2.tar.gz on most GNU systems
+  3. cd lxx74-cups-0.8.2; 
+  4. su root
+  5. bash ./lxx74-install. (Notice the last message, should be "Installation done.")
+  6. killall -HUP cupsd
+
+The install script copies the files into the cups directories, normally
+/etc/cups, /usr/share/cups/model, and /usr/lib/cups/filter. (Check with 
+cups-config --serverroot; cups-config --datadir; cups-config --serverbin)
+You can then delete the un-tar'ed package.
+
+You must use any of the CUPS interfaces to create a printer queue.
+
+I did this on my system by 
+  1. pointing my browser to http://localhost:631/admin (which requires that
+     cupsd is running),
+  2. logging in, 
+  3. clicking on Add Printer, 
+  4. Picking a short name (it appears that it cannot have spaces).
+     Clicking “Continue”.
+  5. Scrolling down the devices list until I found “USB Printer 1”.
+     If the printer is connected, “Lexmark All In One” should appear next
+     to the device. Then I clicked “Continue”,
+  6. Selecting vendor “LEXMARK”, and clicking “Continue”,
+  7. Selecting model/driver “Lexmark All In One, 1.0 (en)”, and clicking “Continue”.
+
+You may need to add some parameters to the file /etc/cups/lpoptions to compensate 
+for misalignment of the ink cartridge. (Actually, the directory where this file 
+goes is what you get from the command "cups-config --serverroot".
+
+The following procedure may need to be repeated whenever you replace an ink 
+cartridge: 
+
+  1. Using Cups' web interface, print a test page. 
+  2. The test page has a black frame running around the page. If the vertical 
+     lines of this frame are broken into 8-mm segments set off alternatingly 
+     to the left and to the right, you need the parameter RTLAdjust=n, where 
+     'n' is a number in the range [-25, 25]. It measures the offset in 600th 
+     of an inch. 
+     Notice that the segments do line up with eachother in portions of the page 
+     that prints in colors. This is because the printer then prints the black 
+     ink while moving the print head to  the right, and prints the color ink 
+     while moving the print head to the left – or vice versa. The jagged edge 
+     appears when printing the same ink in both left-to-right and right-to-left 
+     movements.
+  3. The test page has a "Color Wheel" showing triangular color gradients inside 
+     black triangular borders. The color triagles are separated by fine white 
+     lines that should be hidden under the balck borders.  If the colors are 
+     misplaced w.r.t the black borders, use the parameters BlackAdjustX=x and 
+     BlackAdjustY=y where x and y are integers in the range [-25, 25]. They 
+     measure the horizontal and vertical offsets respecively, in units of 600th 
+     of an inch.
+  4. The format of the lpoptions file is one line per printer, each like in this 
+     example, which is for a printer called “Thunder”:
+        Dest Thunder RTLAdjust=4 BlackAdjustX=-3 BlackAdjustY=7OA
+  5. That's it! 
+
+The tarball also contains the C source code, a Makefile, and a driver file lxx74.drv.
+This driver file needs to be compiled with ppdc to generate the file lxx74.ppd.
+Ppdc comes with cupsddk-1.0, see http://www.cups.org. Note that to link the C program
+you need the gmp, GNU multiprecision math library, and zlib.
+
+Please report bugs to enrio@online.no
+
+Enrique Perez-Terron, on Saturday July 10, 2004.
