@@ -121,6 +121,27 @@ jobs), so the raster stream is treated as hostile:
   into system directories, and configures the queue; it downloads
   nothing and executes no remote content.
 
+## Testing
+
+No printer needed — the full test suite runs offline:
+
+```sh
+make check        # everything below
+```
+
+- **Golden output**: a synthetic page is rendered to CUPS raster and
+  converted by the filter; the printer-protocol output is pinned by
+  SHA256. Any accidental change to the band encoding fails the test.
+- **Format equivalence**: the same page encoded as v1, v2 and v3 CUPS
+  raster must produce byte-identical printer output.
+- **Hostile corpus**: 14 malformed/adversarial streams (oversized
+  widths, geometry mismatches, bad sync words, truncations, wrong bit
+  depths) run through an AddressSanitizer+UBSan build — memory-safety
+  findings or unclean rejections fail the test.
+- **Static checks**: PPD validation and shell syntax.
+
+CI runs the same suite on every push (`.github/workflows/ci.yml`).
+
 ## Troubleshooting
 
 - **Printer not found by `install.sh`** — check `lsusb` shows the
@@ -131,8 +152,6 @@ jobs), so the raster stream is treated as hostile:
   `sudo cupsctl --debug-logging`, print again, and check
   `/var/log/cups/error_log` for `rastertolxz33` debug lines. The first
   bytes sent to the printer must be `1b 2f 81 00` (the Z33 preamble).
-- **Testing without a printer** — `make test` runs the filter on a
-  synthetic page and validates the output stream; see `tools/` below.
 
 ## Repository layout
 
@@ -142,6 +161,7 @@ src/lxz33.ppd          PPD (Lexmark Z33, options, 600 dpi)
 src/z33-preamble.bin   printer initialisation blob sent before each job
 src/lxz33.convs/.types optional CUPS MIME definitions
 tools/mkraster.c       generates a synthetic CUPS-raster page (for tests)
+tests/                 test suite: run_tests.sh, raster version converter
 upstream/              the 2005 sources this port is based on, unmodified
 ```
 

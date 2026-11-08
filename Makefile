@@ -25,7 +25,7 @@ TESTTOOL = tools/mkraster
 
 .PHONY: all install uninstall test clean
 
-all: $(FILTER)
+all: $(FILTER) $(TESTTOOL)
 
 $(FILTER): src/rastertolxz33.c
 	$(CC) $(CFLAGS) $(HARDENING) -DDRIVER_VERSION=\"$(DRIVER_VERSION)\" \
@@ -61,6 +61,11 @@ test: $(FILTER) $(TESTTOOL)
 	head -c 4 testpage.z33 | od -An -tx1 | grep -q '1b 2f 81 00' \
 	    && echo "OK: output starts with the Z33 preamble (1b 2f 81 00)" \
 	    || { echo "FAIL: preamble missing"; exit 1; }
+
+# Full test suite: golden hashes, raster-version equivalence,
+# hostile-input corpus under sanitizers. See tests/run_tests.sh.
+check: $(FILTER) $(TESTTOOL)
+	./tests/run_tests.sh
 
 clean:
 	rm -f $(FILTER) $(TESTTOOL) testpage.z33
