@@ -1,0 +1,64 @@
+// lxx74.drv - Define the properties of the Lexmark Z33 printer.
+
+// Copyright (C) 2004 Enrique Perez-Terron of Norway
+
+// Copyright (C) 2005 Vitaly V. Bursov <vitalyvb@ukr.net>
+// 			- Modified for Z33
+
+// This program is free software; you can redistribute it and/or modify it under the terms
+// of the GNU General Public License as published by the Free Software Foundation; either
+// version 2 of the License, or (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License along with this
+// program, see the file LICENSE; if not, write to the Free Software Foundation, Inc., 59
+// Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
+// Please report bugs to Vitaly V. Bursov <vitalyvb@ukr.net>
+
+// To use this file, compile it with ppdc to generate a PPD file.
+// Ppdc is part of cupsddk, Cups driver development kit.
+
+// Include standard font and media definitions
+#include <font.defs>
+#include <media.defs>
+#include <raster.defs>
+
+// List the fonts that are supported, in this case all standard
+// fonts...
+Font *
+
+// Manufacturer, model name, and version
+Manufacturer "Lexmark"
+ModelName "Z33"
+Version 1.0
+
+// Each filter provided by the driver...
+Filter application/vnd.cups-raster 100 rastertolxz33
+
+// Supported page sizes
+*MediaSize A4
+MediaSize Letter
+
+// Supports color printing
+ColorDevice true
+
+// Supported color spaces
+*ColorModel Black/Black k chunky 0
+ColorModel CMYK/Color cmyk chunky 0
+
+// Supported resolutions
+//          Colorspace, no change
+//          | Bits per color
+//          | |  Rows per band
+//          | |  |  Row feed
+//          | |  |  | Row Step
+//          | |  |  | | Name and text
+*Resolution - 1 192 0 0 "600dpi/600 DPI"
+
+// Specify the name of the PPD file we want to generate...
+PCFileName "lxz33.ppd"
+
