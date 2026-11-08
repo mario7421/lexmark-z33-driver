@@ -1,0 +1,261 @@
+*PPD-Adobe: "4.3"
+*% PPD file for Z33 with CUPS.
+*% Created by the CUPS PPD Compiler v1.0.
+*FormatVersion: "4.3"
+*FileVersion: "1.1"
+*LanguageVersion: English
+*LanguageEncoding: ISOLatin1
+*PCFileName: "lxz33.ppd"
+*Product: "(ESP Ghostscript)"
+*Product: "(GNU Ghostscript)"
+*Manufacturer: "Lexmark"
+*ModelName: "Lexmark Z33"
+*ShortNickName: "Lexmark Z33"
+*NickName: "Lexmark Z33, 1.1 (black)"
+*PSVersion: "(3010.000) 705"
+*PSVersion: "(3010.000) 707"
+*LanguageLevel: "3"
+*ColorDevice: True
+*DefaultColorSpace: RGB
+*FileSystem: False
+*Throughput: "1"
+*LandscapeOrientation: Plus90
+*TTRasterizer: Type42
+*% CUPS attributes...
+*cupsVersion: 1.1
+*cupsModelNumber: "0"
+*cupsManualCopies: False
+*cupsFilter: "application/vnd.cups-raster 100 rastertolxz33"
+*OpenUI *PageSize: PickOne
+*OrderDependency: 10 AnySetup *PageSize
+*DefaultPageSize: A4
+*PageSize A4/A4 - 210x297mm: "<</PageSize[595 842]/ImagingBBox null>>setpagedevice"
+*PageSize Letter/Letter - 8.5x11in: "<</PageSize[612 792]/ImagingBBox null>>setpagedevice"
+*CloseUI: *PageSize
+*OpenUI *PageRegion: PickOne
+*OrderDependency: 10 AnySetup *PageRegion
+*DefaultPageRegion: A4
+*PageRegion A4/A4 - 210x297mm: "<</PageSize[595 842]/ImagingBBox null>>setpagedevice"
+*PageRegion Letter/Letter - 8.5x11in: "<</PageSize[612 792]/ImagingBBox null>>setpagedevice"
+*CloseUI: *PageRegion
+*DefaultImageableArea: A4
+*ImageableArea A4/A4 - 210x297mm: "0.00 0.00 595.00 842.00"
+*ImageableArea Letter/Letter - 8.5x11in: "0.00 0.00 612.00 792.00"
+*DefaultPaperDimension: A4
+*PaperDimension A4/A4 - 210x297mm: "595.00 842.00"
+*PaperDimension Letter/Letter - 8.5x11in: "612.00 792.00"
+*RequiresPageRegion All: True
+*OpenUI *ColorModel/Color Mode: PickOne
+*OrderDependency: 10.0 AnySetup *ColorModel
+*DefaultColorModel: Black
+*ColorModel Black: "<</cupsColorSpace 3/cupsColorOrder 0/cupsCompression 0>>setpagedevice"
+*ColorModel CMYK/Color: "<</cupsColorSpace 6/cupsColorOrder 0/cupsCompression 0>>setpagedevice"
+*CloseUI: *ColorModel
+*OpenUI *Resolution: PickOne
+*OrderDependency: 10.0 AnySetup *Resolution
+*DefaultResolution: 600dpi
+*Resolution 600dpi/600 DPI: "<</HWResolution[600 600]/cupsBitsPerColor 1/cupsRowCount 192/cupsRowFeed 0/cupsRowStep 0>>setpagedevice"
+*CloseUI: *Resolution
+
+*OpenUI *RTLAdjust/Right-to-Left Alignment: PickOne
+*OrderDependency: 20 AnySetup *RTLAdjust
+*DefaultRTLAdjust: 4
+*RTLAdjust -25/-25: ""
+*RTLAdjust -24/-24: ""
+*RTLAdjust -23/-23: ""
+*RTLAdjust -22/-22: ""
+*RTLAdjust -21/-21: ""
+*RTLAdjust -20/-20: ""
+*RTLAdjust -19/-19: ""
+*RTLAdjust -18/-18: ""
+*RTLAdjust -17/-17: ""
+*RTLAdjust -16/-16: ""
+*RTLAdjust -15/-15: ""
+*RTLAdjust -14/-14: ""
+*RTLAdjust -13/-13: ""
+*RTLAdjust -12/-12: ""
+*RTLAdjust -11/-11: ""
+*RTLAdjust -10/-10: ""
+*RTLAdjust -9/-9: ""
+*RTLAdjust -8/-8: ""
+*RTLAdjust -7/-7: ""
+*RTLAdjust -6/-6: ""
+*RTLAdjust -5/-5: ""
+*RTLAdjust -4/-4: ""
+*RTLAdjust -3/-3: ""
+*RTLAdjust -2/-2: ""
+*RTLAdjust -1/-1: ""
+*RTLAdjust 0/0: ""
+*RTLAdjust 1/1: ""
+*RTLAdjust 2/2: ""
+*RTLAdjust 3/3: ""
+*RTLAdjust 4/4: ""
+*RTLAdjust 5/5: ""
+*RTLAdjust 6/6: ""
+*RTLAdjust 7/7: ""
+*RTLAdjust 8/8: ""
+*RTLAdjust 9/9: ""
+*RTLAdjust 10/10: ""
+*RTLAdjust 11/11: ""
+*RTLAdjust 12/12: ""
+*RTLAdjust 13/13: ""
+*RTLAdjust 14/14: ""
+*RTLAdjust 15/15: ""
+*RTLAdjust 16/16: ""
+*RTLAdjust 17/17: ""
+*RTLAdjust 18/18: ""
+*RTLAdjust 19/19: ""
+*RTLAdjust 20/20: ""
+*RTLAdjust 21/21: ""
+*RTLAdjust 22/22: ""
+*RTLAdjust 23/23: ""
+*RTLAdjust 24/24: ""
+*RTLAdjust 25/25: ""
+*CloseUI: *RTLAdjust
+*OpenUI *BlackAdjustX/Black Horizontal Alignment: PickOne
+*OrderDependency: 20 AnySetup *BlackAdjustX
+*DefaultBlackAdjustX: 0
+*BlackAdjustX -25/-25: ""
+*BlackAdjustX -24/-24: ""
+*BlackAdjustX -23/-23: ""
+*BlackAdjustX -22/-22: ""
+*BlackAdjustX -21/-21: ""
+*BlackAdjustX -20/-20: ""
+*BlackAdjustX -19/-19: ""
+*BlackAdjustX -18/-18: ""
+*BlackAdjustX -17/-17: ""
+*BlackAdjustX -16/-16: ""
+*BlackAdjustX -15/-15: ""
+*BlackAdjustX -14/-14: ""
+*BlackAdjustX -13/-13: ""
+*BlackAdjustX -12/-12: ""
+*BlackAdjustX -11/-11: ""
+*BlackAdjustX -10/-10: ""
+*BlackAdjustX -9/-9: ""
+*BlackAdjustX -8/-8: ""
+*BlackAdjustX -7/-7: ""
+*BlackAdjustX -6/-6: ""
+*BlackAdjustX -5/-5: ""
+*BlackAdjustX -4/-4: ""
+*BlackAdjustX -3/-3: ""
+*BlackAdjustX -2/-2: ""
+*BlackAdjustX -1/-1: ""
+*BlackAdjustX 0/0: ""
+*BlackAdjustX 1/1: ""
+*BlackAdjustX 2/2: ""
+*BlackAdjustX 3/3: ""
+*BlackAdjustX 4/4: ""
+*BlackAdjustX 5/5: ""
+*BlackAdjustX 6/6: ""
+*BlackAdjustX 7/7: ""
+*BlackAdjustX 8/8: ""
+*BlackAdjustX 9/9: ""
+*BlackAdjustX 10/10: ""
+*BlackAdjustX 11/11: ""
+*BlackAdjustX 12/12: ""
+*BlackAdjustX 13/13: ""
+*BlackAdjustX 14/14: ""
+*BlackAdjustX 15/15: ""
+*BlackAdjustX 16/16: ""
+*BlackAdjustX 17/17: ""
+*BlackAdjustX 18/18: ""
+*BlackAdjustX 19/19: ""
+*BlackAdjustX 20/20: ""
+*BlackAdjustX 21/21: ""
+*BlackAdjustX 22/22: ""
+*BlackAdjustX 23/23: ""
+*BlackAdjustX 24/24: ""
+*BlackAdjustX 25/25: ""
+*CloseUI: *BlackAdjustX
+*OpenUI *BlackAdjustY/Black Vertical Alignment: PickOne
+*OrderDependency: 20 AnySetup *BlackAdjustY
+*DefaultBlackAdjustY: 0
+*BlackAdjustY -25/-25: ""
+*BlackAdjustY -24/-24: ""
+*BlackAdjustY -23/-23: ""
+*BlackAdjustY -22/-22: ""
+*BlackAdjustY -21/-21: ""
+*BlackAdjustY -20/-20: ""
+*BlackAdjustY -19/-19: ""
+*BlackAdjustY -18/-18: ""
+*BlackAdjustY -17/-17: ""
+*BlackAdjustY -16/-16: ""
+*BlackAdjustY -15/-15: ""
+*BlackAdjustY -14/-14: ""
+*BlackAdjustY -13/-13: ""
+*BlackAdjustY -12/-12: ""
+*BlackAdjustY -11/-11: ""
+*BlackAdjustY -10/-10: ""
+*BlackAdjustY -9/-9: ""
+*BlackAdjustY -8/-8: ""
+*BlackAdjustY -7/-7: ""
+*BlackAdjustY -6/-6: ""
+*BlackAdjustY -5/-5: ""
+*BlackAdjustY -4/-4: ""
+*BlackAdjustY -3/-3: ""
+*BlackAdjustY -2/-2: ""
+*BlackAdjustY -1/-1: ""
+*BlackAdjustY 0/0: ""
+*BlackAdjustY 1/1: ""
+*BlackAdjustY 2/2: ""
+*BlackAdjustY 3/3: ""
+*BlackAdjustY 4/4: ""
+*BlackAdjustY 5/5: ""
+*BlackAdjustY 6/6: ""
+*BlackAdjustY 7/7: ""
+*BlackAdjustY 8/8: ""
+*BlackAdjustY 9/9: ""
+*BlackAdjustY 10/10: ""
+*BlackAdjustY 11/11: ""
+*BlackAdjustY 12/12: ""
+*BlackAdjustY 13/13: ""
+*BlackAdjustY 14/14: ""
+*BlackAdjustY 15/15: ""
+*BlackAdjustY 16/16: ""
+*BlackAdjustY 17/17: ""
+*BlackAdjustY 18/18: ""
+*BlackAdjustY 19/19: ""
+*BlackAdjustY 20/20: ""
+*BlackAdjustY 21/21: ""
+*BlackAdjustY 22/22: ""
+*BlackAdjustY 23/23: ""
+*BlackAdjustY 24/24: ""
+*BlackAdjustY 25/25: ""
+*CloseUI: *BlackAdjustY
+*DefaultFont: Courier
+*Font AvantGarde-Book: Standard "(1.05)" Standard ROM
+*Font AvantGarde-BookOblique: Standard "(1.05)" Standard ROM
+*Font AvantGarde-Demi: Standard "(1.05)" Standard ROM
+*Font AvantGarde-DemiOblique: Standard "(1.05)" Standard ROM
+*Font Bookman-Demi: Standard "(1.05)" Standard ROM
+*Font Bookman-DemiItalic: Standard "(1.05)" Standard ROM
+*Font Bookman-Light: Standard "(1.05)" Standard ROM
+*Font Bookman-LightItalic: Standard "(1.05)" Standard ROM
+*Font Courier: Standard "(1.05)" Standard ROM
+*Font Courier-Bold: Standard "(1.05)" Standard ROM
+*Font Courier-BoldOblique: Standard "(1.05)" Standard ROM
+*Font Courier-Oblique: Standard "(1.05)" Standard ROM
+*Font Helvetica: Standard "(1.05)" Standard ROM
+*Font Helvetica-Bold: Standard "(1.05)" Standard ROM
+*Font Helvetica-BoldOblique: Standard "(1.05)" Standard ROM
+*Font Helvetica-Narrow: Standard "(1.05)" Standard ROM
+*Font Helvetica-Narrow-Bold: Standard "(1.05)" Standard ROM
+*Font Helvetica-Narrow-BoldOblique: Standard "(1.05)" Standard ROM
+*Font Helvetica-Narrow-Oblique: Standard "(1.05)" Standard ROM
+*Font Helvetica-Oblique: Standard "(1.05)" Standard ROM
+*Font NewCenturySchlbk-Bold: Standard "(1.05)" Standard ROM
+*Font NewCenturySchlbk-BoldItalic: Standard "(1.05)" Standard ROM
+*Font NewCenturySchlbk-Italic: Standard "(1.05)" Standard ROM
+*Font NewCenturySchlbk-Roman: Standard "(1.05)" Standard ROM
+*Font Palatino-Bold: Standard "(1.05)" Standard ROM
+*Font Palatino-BoldItalic: Standard "(1.05)" Standard ROM
+*Font Palatino-Italic: Standard "(1.05)" Standard ROM
+*Font Palatino-Roman: Standard "(1.05)" Standard ROM
+*Font Symbol: Special "(001.005)" Special ROM
+*Font Times-Bold: Standard "(1.05)" Standard ROM
+*Font Times-BoldItalic: Standard "(1.05)" Standard ROM
+*Font Times-Italic: Standard "(1.05)" Standard ROM
+*Font Times-Roman: Standard "(1.05)" Standard ROM
+*Font ZapfChancery-MediumItalic: Standard "(1.05)" Standard ROM
+*Font ZapfDingbats: Special "(001.005)" Special ROM
+*% End of lxz33.ppd, 04221 bytes.
