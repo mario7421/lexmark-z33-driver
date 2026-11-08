@@ -140,6 +140,10 @@ make check        # everything below
   findings or unclean rejections fail the test.
 - **Static checks**: PPD validation and shell syntax.
 
+Test builds (`make test`, `tests/run_tests.sh`, CI) compile a
+variant whose preamble path points into the source tree, so the suite
+runs from a fresh checkout with no prior `make install`.
+
 CI runs the same suite on every push (`.github/workflows/ci.yml`).
 
 ## Troubleshooting
@@ -163,6 +167,7 @@ src/lxz33.convs/.types optional CUPS MIME definitions
 tools/mkraster.c       generates a synthetic CUPS-raster page (for tests)
 tests/                 test suite: run_tests.sh, raster version converter
 upstream/              the 2005 sources this port is based on, unmodified
+                       (also available as git tag lxx74-cups-0.8.2-z33-original)
 ```
 
 ## Background & credits
