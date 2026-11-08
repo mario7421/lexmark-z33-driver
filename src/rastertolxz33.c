@@ -1139,9 +1139,39 @@ static void print_bands(lxx74_device_t *lxx74, int flush, FILE *f)
     
 }
 
+/* Locate the Z33 preamble file:
+ * 1. $LXZ33_PREAMBLE (explicit override, also used by tests)
+ * 2. the path baked in at compile time (the install location)
+ * 3. a file named z33-preamble.bin next to the executable
+ *    (makes the un-installed build tree usable, e.g. `make test`)
+ */
+static char *Arg0; /* defined near the other globals below */
+
+static const char *find_preamble(void)
+{
+    static char pathbuf[4096];
+    const char *env = getenv("LXZ33_PREAMBLE");
+    const char *slash;
+    size_t dirlen;
+
+    if (env && *env)
+	return env;
+
+    if (access(Z33_PREAMBLE_FILENAME, R_OK) == 0)
+	return Z33_PREAMBLE_FILENAME;
+
+    if (Arg0 && (slash = strrchr(Arg0, '/')) && (dirlen = (size_t)(slash - Arg0)) < sizeof(pathbuf) - 32) {
+	snprintf(pathbuf, sizeof(pathbuf), "%.*s/z33-preamble.bin", (int)dirlen, Arg0);
+	if (access(pathbuf, R_OK) == 0)
+	    return pathbuf;
+    }
+
+    return Z33_PREAMBLE_FILENAME; /* let fopen produce the error message */
+}
+
 static int do_preamble(lxx74_device_t *lxx74, FILE *f)
 {
-    const char *fn = Z33_PREAMBLE_FILENAME;
+    const char *fn = find_preamble();
     FILE *preamble;
     char buf[4096];
     int bl;
@@ -1150,7 +1180,7 @@ static int do_preamble(lxx74_device_t *lxx74, FILE *f)
 
     preamble = fopen(fn, "rb");
     if (preamble == NULL){
-	error("failed to open preamble file");
+	error("failed to open preamble file '%s': %s", fn, strerror(errno));
 	return -1;
     }
 
@@ -1202,7 +1232,6 @@ static int do_pageend(lxx74_device_t *lxx74, FILE *f)
     return 0;
 }
 
-static char *Arg0;
 static cups_page_header2_t *cups_header;
 static char *filename;
 static long copies;

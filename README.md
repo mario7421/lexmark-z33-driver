@@ -140,6 +140,11 @@ make check        # everything below
   findings or unclean rejections fail the test.
 - **Static checks**: PPD validation and shell syntax.
 
+The filter locates the preamble file at runtime: `$LXZ33_PREAMBLE`
+(override), then the compiled-in install path, then a
+`z33-preamble.bin` next to the executable — so the un-installed build
+tree works standalone (`make test` needs no prior `make install`).
+
 CI runs the same suite on every push (`.github/workflows/ci.yml`).
 
 ## Troubleshooting
