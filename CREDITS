@@ -1,0 +1,35 @@
+# Credits & provenance
+
+## Original authors
+
+- **Enrique Perez-Terron** <enrio@online.no>
+  Author of the `lxx74` driver for the Lexmark X74 all-in-one
+  (2003–2004), including the reverse engineering of the printer's
+  band protocol. Released under the GNU GPL v2.
+
+- **Vitaly V. Bursov** <vitalyvb@ukr.net>
+  Author of the Z33 adaptation and the original CUPS packaging
+  (`lxx74-cups-0.8.2-z33`, March 2005), published at
+  `http://vitalyb.mail333.com/` (now offline; recovered via the
+  Internet Archive).
+
+## This port
+
+The files in `upstream/lxx74-cups-0.8.2-z33/` are byte-for-byte the
+2005 release. `src/rastertolxz33.c` is derived from it with the
+following functional changes (same license, GPL v2):
+
+- CUPS raster page-header reading rewritten to support all raster
+  versions produced by current CUPS/Ghostscript pipelines (v1 `RaSt`,
+  v2 `RaS2`, and the modern v3 `RaS3` format in which the sync word is
+  stored outside the header struct), including byte-order handling.
+- Filter argument parsing fixed to the CUPS convention
+  (`argv[5]=copies argv[6]=options argv[7]=filename`); the original
+  misparsed real CUPS invocations.
+- 64-bit portability fixes (pointer/integer casts, format strings).
+- End-of-stream handling: the page loop now ends cleanly when the
+  raster input ends instead of exiting with an error.
+- Version banner emitted to the CUPS debug log.
+
+The printer initialisation blob (`z33-preamble.bin`) is unchanged from
+the 2005 release.

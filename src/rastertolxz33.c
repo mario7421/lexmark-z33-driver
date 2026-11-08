@@ -344,125 +344,70 @@ static void inline lxx74_free(void *mem);
 #include <cups/cups.h>
 #include <cups/raster.h>
 
-typedef struct
+/* ------------------------------------------------------------------
+ * Port to modern CUPS (2.x):
+ * Reads CUPS raster v1 and v2 page headers with plain fread() on
+ * stdin, so the pixel reads in lxx74_get_bits() stay consistent on
+ * the same stdio stream (the 2004 code did this too, but only
+ * understood the v1 sync word; libcupsimage's read()-based buffering
+ * cannot be mixed with our fread() pixel reads).
+ * v1 and v2 headers share the offsets of all fields we use; v2 just
+ * has 1376 extra bytes appended after byte 420.
+ * ------------------------------------------------------------------ */
+#define CUPS_RASTER_SYNC_V2 0x52615332 /* 'RaS2' */
+
+static int read_cups_header(FILE *f, cups_page_header2_t *h)
 {
-  unsigned	sync;			/* Sync word from start of stream */
-  FILE		*file;			/* File descriptor */
-  cups_mode_t	mode;			/* Read/write mode */
-} mycups_raster_t;
+    unsigned char *buf = (unsigned char *)h;
+    size_t hdrlen = 0;		/* total bytes: sync + header */
+    size_t bodyoff = 0;		/* where the struct starts in buf/file */
+    unsigned sync;
+    int swapped = 0;
 
-mycups_raster_t *				/* O - New stream */
-mycupsRasterOpen(FILE       *file,		/* I - File descriptor */
-                 cups_mode_t mode)	/* I - Mode */
-{
-  mycups_raster_t	*r;			/* New stream */
+    memset(h, 0, sizeof(*h));
+    if (fread(buf, 1, 4, f) != 4)
+	return 0; /* clean EOF */
 
+    /* Parse the sync word as big-endian byte sequence. NOTE: the CUPS_*
+	 * constants are meant to be compared against a native-endian read,
+	 * so under this big-endian parse a *normal* little-endian-host
+	 * stream shows up as the REVSYNC* constant and vice versa. */
+    sync = ((unsigned)buf[0] << 24) | ((unsigned)buf[1] << 16) |
+	   ((unsigned)buf[2] << 8) | (unsigned)buf[3];
 
-  if ((r = calloc(sizeof(mycups_raster_t), 1)) == NULL)
-    return (NULL);
-
-  r->file = file;
-  r->mode = mode;
-
-  if (mode == CUPS_RASTER_READ)
-  {
-   /*
-    * Open for read - get sync word...
-    */
-
-    if (fread(&(r->sync), sizeof(r->sync), 1, file) != 1)
-    {
-      free(r);
-      return (NULL);
+    if (sync == CUPS_RASTER_REVSYNCv1) {	/* bytes "tSaR": normal LE v1 */
+	hdrlen = 420; bodyoff = 0;
+    } else if (sync == CUPS_RASTER_SYNCv1) {	/* bytes "RaSt": BE-host v1 */
+	hdrlen = 420; bodyoff = 0; swapped = 1;
+    } else if (sync == CUPS_RASTER_REVSYNCv2) {	/* bytes "2SaR": normal LE v2 */
+	hdrlen = sizeof(cups_page_header2_t); bodyoff = 0;
+    } else if (sync == CUPS_RASTER_SYNCv2) {	/* bytes "RaS2": BE-host v2 */
+	hdrlen = sizeof(cups_page_header2_t); bodyoff = 0; swapped = 1;
+    } else if (sync == CUPS_RASTER_REVSYNC) {	/* bytes "3SaR": normal LE v3,
+						 * modern default; sync is OUTSIDE
+						 * the struct, 1800 bytes total */
+	hdrlen = 4 + sizeof(cups_page_header2_t); bodyoff = 4;
+    } else if (sync == CUPS_RASTER_SYNC) {	/* bytes "RaS3": BE-host v3 */
+	hdrlen = 4 + sizeof(cups_page_header2_t); bodyoff = 4; swapped = 1;
+    } else {
+	error("Unknown CUPS raster sync word 0x%08x", sync);
+	return -1;
     }
 
-    if (r->sync != CUPS_RASTER_SYNC &&
-        r->sync != CUPS_RASTER_REVSYNC)
-    {
-      free(r);
-      return (NULL);
-    }
-  }
-  else
-  {
-   /*
-    * Open for write - put sync word...
-    */
-
-    r->sync = CUPS_RASTER_SYNC;
-    if (fwrite(&(r->sync), sizeof(r->sync), 1, file) != 1)
-    {
-      free(r);
-      return (NULL);
-    }
-  }
-
-  return (r);
-}
-
-
-unsigned				/* O - Number of bytes read */
-mycupsRasterReadPixels(mycups_raster_t *r,	/* I - Raster stream */
-                     unsigned char *p,	/* I - Pointer to pixel buffer */
-		     unsigned      len)	/* I - Number of bytes to read */
-{
-  int		bytes;			/* Bytes read */
-  unsigned	remaining;		/* Bytes remaining */
-
-
-  if (r == NULL || r->mode != CUPS_RASTER_READ)
-    return (0);
-
-  remaining = len;
-
-  while (remaining > 0)
-  {
-    bytes = fread(p, 1, remaining, r->file);
-
-    if (bytes == 0)
-      return (0);
-    else if (bytes < 0)
-    {
-      if (errno != EINTR)
-        return (0);
-      else
-        continue;
+    /* v1/v2: sync overlaps MediaClass, struct remainder lands at buf+4.
+     * v3: sync is separate, struct lands at buf+0. */
+    if (fread(buf + (bodyoff ? 0 : 4), 1, hdrlen - 4, f) != hdrlen - 4) {
+	error("Truncated CUPS raster page header");
+	return -1;
     }
 
-    remaining -= bytes;
-    p += bytes;
-  }
-
-  return (len);
-}
-
-unsigned					/* O - 1 on success, 0 on fail */
-mycupsRasterReadHeader(mycups_raster_t      *r,	/* I - Raster stream */
-                     cups_page_header_t *h)	/* I - Pointer to header data */
-{
-  int		len;				/* Number of words to swap */
-  union swap_s					/* Swapping structure */
-  {
-    unsigned char	b[4];
-    unsigned		v;
-  }		*s;
-
-
-  if (r == NULL || r->mode != CUPS_RASTER_READ)
-    return (0);
-
-  if (mycupsRasterReadPixels(r, (unsigned char *)h, sizeof(cups_page_header_t)) <
-          sizeof(cups_page_header_t))
-    return (0);
-
-  if (r->sync == CUPS_RASTER_REVSYNC)
-    for (len = (sizeof(cups_page_header_t) - 256) / 4,
-             s = (union swap_s *)&(h->AdvanceDistance);
-	 len > 0;
-	 len --, s ++)
-      s->v = (((((s->b[3] << 8) | s->b[2]) << 8) | s->b[1]) << 8) | s->b[0];
-
-  return (1);
+    if (swapped) {
+	unsigned i, *w;
+	for (i = 0, w = (unsigned *)(buf + 256); i < (hdrlen - bodyoff - 256)/4; i++, w++)
+	    *w = ((*w >> 24) & 0xff) | ((*w >> 8) & 0xff00) |
+		 ((*w << 8) & 0xff0000) | ((*w << 24) & 0xff000000);
+    }
+    return 1;
 }
 
 /* lxxx74->pix is initialized from lxx74_print_page() with empty scanlines corresponding to
@@ -1258,8 +1203,7 @@ static int do_pageend(lxx74_device_t *lxx74, FILE *f)
 }
 
 static char *Arg0;
-static mycups_raster_t *cups_raster;
-static cups_page_header_t *cups_header;
+static cups_page_header2_t *cups_header;
 static char *filename;
 static long copies;
 
@@ -1375,25 +1319,25 @@ static int newpage=0;
 static int lxx74_print_page(lxx74_device_t *lxx74, FILE *f)
 {
     int code = 0;
-    off_t pos1, pos2;
 
+
+    {
+	int rh = read_cups_header(stdin, cups_header);
+	if (rh == 0)
+	    return 1; /* clean EOF: no more pages */
+	if (rh < 0) {
+	    error("%s: read_cups_header failed", Arg0);
+	    exit(1);
+	}
+    }
+    newpage=1;
 
     if (!lxx74->preamble_done) {
 	int retval = do_preamble(lxx74, f);
 	if (retval < 0)
 	    return retval;
     }
-
-    pos1 = (off_t)ftell(cups_raster->file);
-    if (!mycupsRasterReadHeader(cups_raster, cups_header)) {
-	error("%s: cupsRasterReadHeader failed", Arg0);
-	exit(1);
-    }
-    pos2 = (off_t)ftell(cups_raster->file);
-    newpage=1;
-
-    debug("Read header from file positions %d to %d (%d bytes)", (int)pos1, (int)pos2, (int)pos2-(int)pos1);
-    debug("HWResolution starts at offset %d",(void *)&cups_header->HWResolution[0] - (void *)cups_header);
+    debug("HWResolution starts at offset %d",(int)((void *)&cups_header->HWResolution[0] - (void *)cups_header));
     debug("MediaClass:      %s", cups_header->MediaClass);
     debug("MediaColor:      %s", cups_header->MediaColor);
     debug("MediaType:       %s", cups_header->MediaType);
@@ -1424,9 +1368,6 @@ static int lxx74_print_page(lxx74_device_t *lxx74, FILE *f)
     debug("OutputFaceUp     %s", cups_header->OutputFaceUp ? "True" : "False");
     debug("PageSize[0]      %u", cups_header->PageSize[0]);
     debug("PageSize[1]      %u", cups_header->PageSize[1]);
-    debug("Separations      %s", cups_header->Separations ? "True" : "False");
-    debug("TraySwitch       %s", cups_header->TraySwitch ? "True" : "False");
-    debug("Tumble           %s", cups_header->Tumble ? "True" : "False");
 
     debug("cupsWidth        %u", cups_header->cupsWidth); /* Width of page image in pixels */
     debug("cupsHeight       %u", cups_header->cupsHeight);/* Height of page image in pixels */
@@ -1443,7 +1384,6 @@ static int lxx74_print_page(lxx74_device_t *lxx74, FILE *f)
     debug("cupsRowFeed      %u", cups_header->cupsRowFeed);/* Feed between bands */
     debug("cupsRowStep      %u", cups_header->cupsRowStep);/* Spacing between lines */
 
-    debug("Expect next page at offset %lu", pos2 + (cups_header->cupsBytesPerLine * cups_header->cupsHeight));
 
     lxx74->HWResolution[0] = cups_header->HWResolution[0];
     lxx74->HWResolution[1] = cups_header->HWResolution[1];
@@ -1548,13 +1488,8 @@ static int lxx74_open(lxx74_device_t *lxx74)
     }
     
 
-    if (!cups_raster) {
-	cups_raster = mycupsRasterOpen(stdin, CUPS_RASTER_READ);
-	if (! cups_raster) {
-	    error("%s: cupsRasterOpen() failed",Arg0);
-	    exit(1);
-	}
-	cups_header = (cups_page_header_t *)malloc(sizeof(cups_page_header_t));
+    if (!cups_header) {
+	cups_header = (cups_page_header2_t *)malloc(sizeof(cups_page_header2_t));
 	if (!cups_header) {
 	    error("%s: Out of memory", Arg0);
 	    exit(1);
@@ -1679,7 +1614,7 @@ typedef struct optiondata_s
     int max;
 } optiondata_t;
 
-#define LXX74_MEMBER_OFFSET(member) ( (int) & ((lxx74_device_t *)0)->member )
+#define LXX74_MEMBER_OFFSET(member) ( (int) (uintptr_t) & ((lxx74_device_t *)0)->member )
 optiondata_t optiondata[] = {
     { "BlackAdjustX=", 1, LXX74_MEMBER_OFFSET(black_adj_x), -25, 25 }, 
     { "BlackAdjustY=", 1, LXX74_MEMBER_OFFSET(black_adj_y), -25, 25 },
@@ -1727,13 +1662,15 @@ int process_options(lxx74_device_t *lxx74, char** opt_array, int expect_hyphens)
 	    }
 	}
 	if (!odp->optname)
-	    error("Unknown option %s", opt);
+	    debug("Ignoring non-driver option %s", opt);
     }
     return opt_p - opt_array;
 }
 
 static void lxx74_init(lxx74_device_t *lxx74, int argc, char *argv[])
 {
+    char *options = NULL;
+
     /* If this is changed, it must be changed everywhere. Search for 'initialized'. */
     if (lxx74->initialized == 0) {
 	lxx74->rtl_adj = DEFAULT_RTL_ADJUST;
@@ -1752,18 +1689,45 @@ static void lxx74_init(lxx74_device_t *lxx74, int argc, char *argv[])
 	error("Need at least 6 args: printer job user title copies options [filename]");
 	exit(1);
     }
-    if (argc >= 7) {
+    /* CUPS filters are invoked in two ways:
+     *  - directly by cupsd:  [path] printer job user title copies options [filename]
+     *  - chained by an upstream filter (observed with cups-filters 1.28
+     *    gstoraster): printer job user title copies options  (argv[0] is the
+     *    PRINTER name, there is no program path and no filename; the data
+     *    arrives on stdin).
+     * Detect the shape by argc and, for the ambiguous argc==6 case, by
+     * whether the last argument looks like an options string. */
+    if (argc >= 8) {
 	char *endptr;
-	copies = strtol(argv[4], &endptr, 0);
-	filename = argv[6];
+	copies = strtol(argv[5], &endptr, 0);
+	options = argv[6];
+	filename = argv[7];
     }
-    else {
-	copies = 1;
+    else if (argc == 7) {
+	char *endptr;
+	copies = strtol(argv[5], &endptr, 0);
+	options = argv[6];
 	filename = NULL;
     }
-    if (argv[5] && *argv[5]) {
-	char ** opt_array = optarray(argv[5]);
-	debug("Found options on the command line");
+    else if (argc == 6) {
+	char *endptr;
+	if (strchr(argv[5], '=') != NULL) {
+	    /* chained invocation */
+	    copies = strtol(argv[4], &endptr, 0);
+	    options = argv[5];
+	} else {
+	    copies = strtol(argv[5], &endptr, 0);
+	    options = NULL;
+	}
+	filename = NULL;
+    }
+    else {
+	error("Need 6-8 args: [prog] printer job user title copies options [filename]");
+	exit(1);
+    }
+    if (options && *options) {
+	char ** opt_array = optarray(options);
+	debug("Found options on the command line: '%s'", options);
 	if (opt_array) {
 	    process_options(lxx74, opt_array, 0);
 	    free(opt_array);
@@ -1799,25 +1763,35 @@ static void lxx74_init(lxx74_device_t *lxx74, int argc, char *argv[])
 			    error("Unable to parse options %s", buffer + count);
 		    }
 		    fclose(lpoptions);
-		} else
+		} else if (errno != ENOENT)
 		    error("Could not open %s: %s", filename, strerror(errno));
+		else
+		    debug("No server-wide lpoptions file (%s); using defaults.", filename);
 		free(filename);
 	    } else
 		error("Out of memory");
 	} else
-	    error("Failed to get environment variables: CUPS_SERVERROOT=%s, PRINTER=%s", 
-		  serverroot ? serverroot : "(not set)",
-		  printer ? printer : "(not set)");
+	    debug("No lpoptions adjustments available (CUPS_SERVERROOT/PRINTER env not set); using defaults.");
     }
 }
 
 int main(int argc, char *argv[])
 {
     int code;
-    int c;
+
     
     Arg0 = argv[0];
-    
+
+#ifndef DRIVER_VERSION
+#define DRIVER_VERSION "dev"
+#endif
+    fprintf(stderr, "DEBUG: rastertolxz33 v%s (CUPS filter for Lexmark Z23/Z33 inkjets,\n", DRIVER_VERSION);
+    fprintf(stderr, "DEBUG: based on lxx74-cups-0.8.2-z33 by Enrique Perez-Terron and Vitaly V. Bursov).\n");
+    fprintf(stderr, "DEBUG: invoked with argc=%d:", argc);
+    for (int i = 0; i < argc; i++)
+	fprintf(stderr, " [%d]=%s", i, argv[i] ? argv[i] : "(null)");
+    fprintf(stderr, "\n");
+
     lxx74_device_t *lxx74 = malloc(sizeof(*lxx74));
     if (!lxx74) {
 	error("%s: Out of memory", argv[0]);
@@ -1828,14 +1802,9 @@ int main(int argc, char *argv[])
     lxx74_init(lxx74, argc, argv);
     lxx74_open(lxx74);
 
-    /* We don't want to call print_page if there is no more input. */
-    c = getchar();
-    while (c != EOF) {
-	ungetc(c, stdin);
-	code = lxx74_print_page(lxx74, stdout);
-	if (code) break;
-	c = getchar();
-    }
+    /* print_page() returns nonzero at end of stream. */
+    while ((code = lxx74_print_page(lxx74, stdout)) == 0)
+	;
     lxx74_close(lxx74);
     exit(0);
 }
