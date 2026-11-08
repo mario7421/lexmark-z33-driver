@@ -5,6 +5,11 @@
 
 CC       ?= gcc
 CFLAGS   ?= -Wall -O2 -g
+# Always-on hardening (kept separate so users can still override CFLAGS):
+#  - _FORTIFY_SOURCE + stack-protector: catch buffer abuses at runtime
+#  - PIE + full RELRO: standard exploit mitigations
+HARDENING  = -D_FORTIFY_SOURCE=3 -fstack-protector-strong -fPIE -Wformat=2
+LDFLAGS   += -fPIE -Wl,-z,relro,-z,now
 LDLIBS    = -lcupsimage -lcups
 
 DRIVER_VERSION = 1.1.0
@@ -23,9 +28,9 @@ TESTTOOL = tools/mkraster
 all: $(FILTER)
 
 $(FILTER): src/rastertolxz33.c
-	$(CC) $(CFLAGS) -DDRIVER_VERSION=\"$(DRIVER_VERSION)\" \
+	$(CC) $(CFLAGS) $(HARDENING) -DDRIVER_VERSION=\"$(DRIVER_VERSION)\" \
 	      -DZ33_PREAMBLE_FILENAME=\"$(PREAMBLE_PATH)\" \
-	      -o $@ $< $(LDLIBS)
+	      -o $@ $< $(LDLIBS) $(LDFLAGS)
 
 $(TESTTOOL): tools/mkraster.c
 	$(CC) $(CFLAGS) -o $@ $< $(LDLIBS)

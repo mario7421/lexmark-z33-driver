@@ -31,5 +31,19 @@ following functional changes (same license, GPL v2):
   raster input ends instead of exiting with an error.
 - Version banner emitted to the CUPS debug log.
 
+Security hardening added in this port:
+
+- Strict validation of the raster page header (width/height/resolution
+  bounds, exact cupsWidth/cupsBitsPerPixel/cupsBytesPerLine
+  consistency) before any buffer allocation or printer output,
+  closing heap out-of-bounds read/write paths reachable from crafted
+  raster headers.
+- Fixed a per-page pixbuf leak; scan buffer, page header and device
+  structures are now released on all exit paths (verified with
+  LeakSanitizer).
+- Build hardening: _FORTIFY_SOURCE=3, stack protector, PIE, full RELRO.
+- Unknown CUPS job options are ignored quietly instead of raising
+  job-level errors.
+
 The printer initialisation blob (`z33-preamble.bin`) is unchanged from
 the 2005 release.

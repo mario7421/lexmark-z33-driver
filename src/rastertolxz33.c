@@ -338,7 +338,7 @@ struct lxx74_device_s
 };
 
 
-static void *lxx74_malloc(int size);
+static void *lxx74_malloc(size_t size);
 static void inline lxx74_free(void *mem);
 
 #include <cups/cups.h>
@@ -1316,6 +1316,67 @@ char *cups_cspace_name(cups_cspace_t cspace)
 
 static int newpage=0;
 
+/* v a l i d a t e _ p a g e _ h e a d e r */
+/* ------------------------------------- */
+
+/* The raster comes from the CUPS pipeline, which normally produces
+ * consistent headers - but filters must treat print jobs as untrusted
+ * input. Every buffer size below is derived from these fields, so a
+ * hostile or buggy header with cupsWidth >> cupsBytesPerLine would
+ * cause out-of-bounds reads AND writes in make_bands(), and the
+ * mono-path 'bytesperline *= 4' could overflow int. Reject anything
+ * inconsistent before any memory is allocated or the printer touched. */
+static int validate_page_header(cups_page_header2_t *h)
+{
+    unsigned w   = h->cupsWidth;
+    unsigned bpl = h->cupsBytesPerLine;
+    unsigned bpp = h->cupsBitsPerPixel;
+    unsigned exp;
+
+    if (w < 1 || w > 65535) {
+	error("Bad page header: cupsWidth %u out of range [1,65535]", w);
+	return -1;
+    }
+    if (h->cupsHeight < 1 || h->cupsHeight > 65535) {
+	error("Bad page header: cupsHeight %u out of range [1,65535]", h->cupsHeight);
+	return -1;
+    }
+    if (h->HWResolution[0] < 300 || h->HWResolution[0] > 4800 ||
+        h->HWResolution[1] < 300 || h->HWResolution[1] > 4800) {
+	error("Bad page header: HWResolution %ux%u out of range [300,4800]",
+	      h->HWResolution[0], h->HWResolution[1]);
+	return -1;
+    }
+
+    if (h->cupsColorSpace == CUPS_CSPACE_K) {
+	/* 1 bit per pixel, 8 pixels per byte; the filter expands each
+	 * input byte to 4 bytes, so bytes per line must be a multiple
+	 * of 4 (checked again in lxx74_get_bits). */
+	if (bpp != 1) {
+	    error("Bad page header: %u bits/pixel unsupported for K (need 1)", bpp);
+	    return -1;
+	}
+	exp = (w + 7) / 8;
+    } else if (h->cupsColorSpace == CUPS_CSPACE_CMYK) {
+	/* 4 bits per pixel, 2 pixels per byte. */
+	if (bpp != 4) {
+	    error("Bad page header: %u bits/pixel unsupported for CMYK (need 4)", bpp);
+	    return -1;
+	}
+	exp = (w + 1) / 2;
+    } else {
+	error("Unsupported colorspace %u", (unsigned)h->cupsColorSpace);
+	return -1;
+    }
+
+    if (bpl != exp) {
+	error("Bad page header: cupsBytesPerLine %u != expected %u for width %u",
+	      bpl, exp, w);
+	return -1;
+    }
+    return 0;
+}
+
 static int lxx74_print_page(lxx74_device_t *lxx74, FILE *f)
 {
     int code = 0;
@@ -1329,6 +1390,8 @@ static int lxx74_print_page(lxx74_device_t *lxx74, FILE *f)
 	    error("%s: read_cups_header failed", Arg0);
 	    exit(1);
 	}
+	if (validate_page_header(cups_header) < 0)
+	    exit(1);
     }
     newpage=1;
 
@@ -1411,6 +1474,9 @@ static int lxx74_print_page(lxx74_device_t *lxx74, FILE *f)
     
     code = setjmp(errorjmp);
     if (!code) {
+	/* The header-parsing section above already allocated a pixbuf;
+	 * release it before re-initializing (avoids leaking one per page). */
+	finalize_pixbuf(lxx74);
 	initialize_pens_and_pixbuf(lxx74);
 
 	get_scanlines(lxx74);
@@ -1441,7 +1507,7 @@ static int lxx74_print_page(lxx74_device_t *lxx74, FILE *f)
 
 
 #include <malloc.h>
-static void *lxx74_malloc(int size)
+static void *lxx74_malloc(size_t size)
 {
     void *mem = malloc(size);
     if(!mem)
@@ -1501,6 +1567,15 @@ static int lxx74_open(lxx74_device_t *lxx74)
 
 static int lxx74_close(lxx74_device_t *lxx74)
 {
+    finalize_pixbuf(lxx74);
+    if (lxx74->scanbuf) {
+	lxx74_free(lxx74->scanbuf);
+	lxx74->scanbuf = 0;
+    }
+    if (cups_header) {
+	free(cups_header);
+	cups_header = 0;
+    }
     return 0;
 }
 
@@ -1806,6 +1881,7 @@ int main(int argc, char *argv[])
     while ((code = lxx74_print_page(lxx74, stdout)) == 0)
 	;
     lxx74_close(lxx74);
+    free(lxx74);
     exit(0);
 }
 

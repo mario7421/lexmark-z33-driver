@@ -89,6 +89,38 @@ Alignment procedure (from the original driver's docs):
    values until the lines are straight.
 3. The units are 1/600 inch.
 
+## Security
+
+CUPS filters process **untrusted input** (any local user can submit
+jobs), so the raster stream is treated as hostile:
+
+- **Strict page-header validation** before any allocation or output:
+  width/height bounds, resolution bounds, and an exact consistency
+  requirement between `cupsWidth`, `cupsBitsPerPixel`, and
+  `cupsBytesPerLine`. This closes the classic GDI-driver bug class
+  where a crafted header (`cupsWidth` far larger than the scanline
+  buffer) causes heap out-of-bounds reads *and writes* during band
+  building. Rejected jobs exit before the printer is even woken up.
+- **No integer-overflow paths**: all buffer-size arithmetic is bounded
+  by the validated header (max scanline 32 KiB, max band ~2 MiB).
+- **Compiler hardening** always on: `_FORTIFY_SOURCE=3`,
+  `-fstack-protector-strong`, PIE, full RELRO, `-Wformat=2`.
+- **Verified with AddressSanitizer + UBSan + LeakSanitizer** against a
+  hostile corpus (oversized widths, zero/mismatched geometry, bad sync
+  words, truncated streams, wrong bit depths, v1/v2/v3 variants):
+  zero findings. Rerun it yourself:
+
+  ```sh
+  python3 tools/gen-hostile-raster.py /tmp/hostile
+  gcc -O1 -g -fsanitize=address,undefined -DZ33_PREAMBLE_FILENAME=\"$PWD/src/z33-preamble.bin\" \
+      -o /tmp/rasterto-asan src/rastertolxz33.c -lcupsimage -lcups
+  for f in /tmp/hostile/*.ras; do /tmp/rasterto-asan t 1 u t 1 "" < "$f" >/dev/null; done
+  ```
+
+- The installer runs as root but only builds this repo, copies files
+  into system directories, and configures the queue; it downloads
+  nothing and executes no remote content.
+
 ## Troubleshooting
 
 - **Printer not found by `install.sh`** — check `lsusb` shows the
