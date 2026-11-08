@@ -47,6 +47,13 @@ else
 fi
 bash -n "$ROOT/install.sh" && bash -n "$ROOT/uninstall.sh" && ok "shell scripts parse"
 
+# Queue-name extraction self-test (ships inside install.sh itself).
+if "$ROOT/install.sh" --selftest-queue-name > "$TMP/selftest.out" 2>&1; then
+    ok "install.sh queue-name extraction ($(grep -c '^PASS' "$TMP/selftest.out") fixtures)"
+else
+    bad "install.sh queue-name extraction"; sed 's/^/    /' "$TMP/selftest.out"
+fi
+
 # --------------------------------------------------------- golden tests ----
 echo "== golden output tests =="
 "$ROOT/tools/mkraster" > "$TMP/pattern-v3.ras"

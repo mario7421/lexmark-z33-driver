@@ -15,6 +15,41 @@ TESTPAGE=0
 say()  { printf '\033[1;32m==>\033[0m %s\n' "$*"; }
 err()  { printf '\033[1;31m==>\033[0m %s\n' "$*" >&2; }
 
+# Extract the queue name from an "lpstat -v" line ("device for NAME: URI"
+# under LC_ALL=C). Pure string ops: no regex metachar pitfalls with URIs,
+# and names containing spaces are kept intact.
+extract_queue_name() { # $1 = line, $2 = uri
+    printf '%s\n' "$1" | LPURI="$2" awk '{
+        uri = ENVIRON["LPURI"]; line = $0;
+        if (uri != "" && substr(line, length(line) - length(uri) + 1) == uri)
+            line = substr(line, 1, length(line) - length(uri));
+        sub(/:[[:space:]]*$/, "", line);
+        if (line ~ /^device for /) { sub(/^device for /, "", line); print line; }
+        else { n = split(line, w, /[[:space:]]+/); print w[n]; }
+    }'
+}
+
+# Self-test for the queue-name extraction (used by tests/run_tests.sh).
+if [ "${1:-}" = "--selftest-queue-name" ]; then
+    t() { # t <expected> <line> <uri>
+        got="$(extract_queue_name "$2" "$3")"
+        if [ "$got" = "$1" ]; then echo "PASS: name extraction ('$2')"
+        else echo "FAIL: name extraction ('$2') -> '$got', expected '$1'"; FAILED=1; fi
+    }
+    URI=usb://Lexmark/Z23-Z33
+    t "Lexmark-Z23-Z33"   "device for Lexmark-Z23-Z33: $URI"            "$URI"
+    t "Lexmark-Z23-Z33"   "device for Lexmark-Z23-Z33: $URI?serial=AB12" "$URI?serial=AB12"
+    t "My Z33 Printer"    "device for My Z33 Printer: $URI"             "$URI"
+    # A line for a different printer never reaches the extractor in the
+    # real flow (grep -F filters it); if it ever did, the raw output is
+    # the remainder, and the name guard in the main flow rejects it
+    # (contains '/'), falling back to 'Z33'.
+    t "Other: usb://Something/Else" "device for Other: usb://Something/Else" "$URI"
+    t ""                  ""                                            "$URI"
+    [ -z "${FAILED:-}" ] || exit 1
+    exit 0
+fi
+
 if [ "$(id -u)" -ne 0 ]; then
     exec sudo "$0" "$@"
 fi
@@ -67,9 +102,12 @@ if [ -z "$URI" ]; then
     say "Connect the printer and run this script again to configure the queue."
 else
     # Reuse an existing queue on this URI if present, else create 'Z33'.
-    # (Locale-independent: strip the trailing ": URI", then take the last word.)
-    NAME="$(lpstat -v 2>/dev/null | grep -F "$URI" | head -1 | awk 'BEGIN{uri=ENVIRON["LPURI"]} { sub(":[[:space:]]*"uri"[[:space:]]*$", ""); print $NF }' LPURI="$URI")"
-    [ -z "$NAME" ] && NAME=Z33
+    NAME="$(extract_queue_name "$(lpstat -v 2>/dev/null | grep -F "$URI" | head -1)" "$URI")"
+    # Guard against garbage names: CUPS queue names must be short, printable,
+    # and free of URI metacharacters.
+    if [ -z "$NAME" ] || [ "${#NAME}" -gt 127 ] || printf '%s' "$NAME" | grep -qE '[/?#]'; then
+        NAME=Z33
+    fi
     say "Configuring queue '$NAME' on $URI..."
     LPADMIN=lpadmin
     command -v lpadmin >/dev/null 2>&1 || LPADMIN=/usr/sbin/lpadmin
